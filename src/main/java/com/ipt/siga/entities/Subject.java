@@ -1,46 +1,54 @@
 package com.ipt.siga.entities;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
-import java.util.List;
+import lombok.Setter;
+
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
-@Table(name = "subjects")
-@Data
+@Table(name = "subjects",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"study_plan_id", "code"}))
+@Getter
+@Setter
 @NoArgsConstructor
-@AllArgsConstructor
 public class Subject {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private String code; // Su código debe ser único dentro del plan[cite: 6]
-
-    @Column(nullable = false)
-    private String name;
-
-    private Integer semester; // Entre 1 y 4[cite: 6]
-
-    // Componentes del TEL[cite: 6]
-    private Integer theoryHours;
-    private Integer exerciseHours;
-    private Integer labHours;
-
-    private Integer sct; // Créditos[cite: 6]
-
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "study_plan_id", nullable = false)
     private StudyPlan studyPlan;
 
-    // Relación: Una asignatura puede tener de 0 a 3 asignaturas como prerrequisito[cite: 6]
-    @ManyToMany
+    @Column(nullable = false, length = 20)
+    private String code;
+
+    @Column(nullable = false, length = 150)
+    private String name;
+
+    @Column(nullable = false)
+    private Integer semester;
+
+    @Column(nullable = false)
+    private Integer theoryHours;
+
+    @Column(nullable = false)
+    private Integer exerciseHours;
+
+    @Column(nullable = false)
+    private Integer labHours;
+
+    @Column(nullable = false)
+    private Integer sct;
+
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "subject_prerequisites",
             joinColumns = @JoinColumn(name = "subject_id"),
-            inverseJoinColumns = @JoinColumn(name = "prerequisite_id")
-    )
-    private List<Subject> prerequisites;
+            inverseJoinColumns = @JoinColumn(name = "prerequisite_id"))
+    private Set<Subject> prerequisites = new HashSet<>();
 }

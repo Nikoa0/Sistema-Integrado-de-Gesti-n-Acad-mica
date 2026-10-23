@@ -8,6 +8,7 @@ import com.ipt.siga.enums.StudyPlanStatus;
 import com.ipt.siga.exceptions.BusinessRuleException;
 import com.ipt.siga.exceptions.ResourceNotFoundException;
 import com.ipt.siga.repositories.StudyPlanRepository;
+import com.ipt.siga.repositories.SubjectRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,6 +21,7 @@ public class StudyPlanService {
 
     private final StudyPlanRepository studyPlanRepository;
     private final CareerService careerService;
+    private final SubjectRepository subjectRepository;
 
     @Transactional
     public StudyPlanResponse create(Long careerId, StudyPlanRequest request) {
@@ -79,7 +81,9 @@ public class StudyPlanService {
     public void delete(Long id) {
         StudyPlan plan = getPlanOrThrow(id);
         // TODO (Epic 1): reject if the plan has students
-        // TODO (Epic 3): reject if the plan has subjects
+        if (subjectRepository.existsByStudyPlanId(id)) {
+            throw new BusinessRuleException("Study plan has subjects and cannot be deleted");
+        }
         studyPlanRepository.delete(plan);
     }
 
@@ -91,7 +95,7 @@ public class StudyPlanService {
                 });
     }
 
-    private StudyPlan getPlanOrThrow(Long id) {
+    public StudyPlan getPlanOrThrow(Long id) {
         return studyPlanRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Study plan not found with id " + id));
     }
