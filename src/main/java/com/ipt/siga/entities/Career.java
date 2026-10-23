@@ -1,29 +1,35 @@
 package com.ipt.siga.entities;
 
+import com.ipt.siga.enums.CareerStatus;
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "careers")
-@Data 
+@Getter
+@Setter
 @NoArgsConstructor
-@AllArgsConstructor
 public class Career {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true, nullable = false)
+    @Column(nullable = false, unique = true, length = 20)
     private String code;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 150)
     private String name;
 
+    @Column(nullable = false, length = 1000)
     private String description;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String status; 
+    private CareerStatus status;
+
+    @Column(nullable = false)
+    private Integer durationSemesters;
 }
