@@ -5,6 +5,7 @@ import com.ipt.siga.dtos.StudyPlanResponse;
 import com.ipt.siga.entities.Career;
 import com.ipt.siga.entities.StudyPlan;
 import com.ipt.siga.enums.StudyPlanStatus;
+import com.ipt.siga.repositories.StudentRepository;
 import com.ipt.siga.exceptions.BusinessRuleException;
 import com.ipt.siga.exceptions.ResourceNotFoundException;
 import com.ipt.siga.repositories.StudyPlanRepository;
@@ -22,6 +23,7 @@ public class StudyPlanService {
     private final StudyPlanRepository studyPlanRepository;
     private final CareerService careerService;
     private final SubjectRepository subjectRepository;
+    private final StudentRepository studentRepository;
 
     @Transactional
     public StudyPlanResponse create(Long careerId, StudyPlanRequest request) {
@@ -80,7 +82,9 @@ public class StudyPlanService {
     @Transactional
     public void delete(Long id) {
         StudyPlan plan = getPlanOrThrow(id);
-        // TODO (Epic 1): reject if the plan has students
+        if (studentRepository.existsByStudyPlanId(id)) {
+            throw new BusinessRuleException("Study plan has students and cannot be deleted");
+        }
         if (subjectRepository.existsByStudyPlanId(id)) {
             throw new BusinessRuleException("Study plan has subjects and cannot be deleted");
         }
@@ -102,5 +106,10 @@ public class StudyPlanService {
 
     private StudyPlanResponse toResponse(StudyPlan p) {
         return new StudyPlanResponse(p.getId(), p.getCareer().getId(), p.getIdentifier(), p.getStatus());
+    }
+
+    public StudyPlan getCurrentPlanOrThrow(Long careerId) {
+        return studyPlanRepository.findByCareerIdAndStatus(careerId, StudyPlanStatus.CURRENT)
+                .orElseThrow(() -> new BusinessRuleException("The career has no current study plan"));
     }
 }

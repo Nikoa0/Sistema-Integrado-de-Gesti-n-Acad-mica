@@ -1,32 +1,38 @@
 package com.ipt.siga.entities;
 
+import com.ipt.siga.enums.TeacherStatus;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "teachers")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
-@AllArgsConstructor
 public class Teacher {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true, nullable = false)
-    private String run; // El RUN debe ser único[cite: 7]
+    @Column(nullable = false, unique = true, length = 12)
+    private String run;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 150)
     private String fullName;
 
-    @Column(unique = true, nullable = false)
-    private String email; // El correo debe ser único[cite: 7]
+    @Column(nullable = false, unique = true, length = 150)
+    private String email;
 
-    private String title;
+    @Column(nullable = false, length = 150)
+    private String professionalTitle;
+
+    @Column(nullable = false, length = 150)
     private String academicDegree;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String status; // ACTIVO o INACTIVO[cite: 7]
+    private TeacherStatus status;
 }

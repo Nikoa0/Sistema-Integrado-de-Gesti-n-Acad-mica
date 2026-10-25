@@ -1,38 +1,40 @@
 package com.ipt.siga.entities;
 
+import com.ipt.siga.enums.StudentStatus;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "students")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
-@AllArgsConstructor
 public class Student {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true, nullable = false)
-    private String run; // El RUN debe ser único[cite: 5]
+    @Column(nullable = false, unique = true, length = 12)
+    private String run;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 150)
     private String fullName;
 
-    @Column(unique = true, nullable = false)
-    private String email; // El correo debe ser único[cite: 5]
+    @Column(nullable = false, unique = true, length = 150)
+    private String email;
 
-    @Column(nullable = false)
-    private String status; // REGULAR, EGRESADO, ELIMINADO, etc.[cite: 4]
-
-    // Relación: Todo estudiante debe estar asociado a una carrera y un plan de estudios[cite: 5]
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "career_id", nullable = false)
     private Career career;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "study_plan_id", nullable = false)
     private StudyPlan studyPlan;
-}   
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private StudentStatus status;
+}

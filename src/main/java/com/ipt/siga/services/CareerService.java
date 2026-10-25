@@ -4,6 +4,7 @@ import com.ipt.siga.dtos.CareerRequest;
 import com.ipt.siga.dtos.CareerResponse;
 import com.ipt.siga.entities.Career;
 import com.ipt.siga.enums.CareerStatus;
+import com.ipt.siga.repositories.StudentRepository;
 import com.ipt.siga.exceptions.BusinessRuleException;
 import com.ipt.siga.exceptions.ResourceNotFoundException;
 import com.ipt.siga.repositories.CareerRepository;
@@ -22,6 +23,7 @@ public class CareerService {
 
     private final CareerRepository careerRepository;
     private final StudyPlanRepository studyPlanRepository;
+    private final StudentRepository studentRepository;
 
     @Transactional
     public CareerResponse create(CareerRequest request) {
@@ -65,7 +67,10 @@ public class CareerService {
     @Transactional
     public void delete(Long id) {
         Career career = getCareerOrThrow(id);
-        // TODO (Epic 1): also reject if the career has students
+        if (studentRepository.existsByCareerId(id)) {
+            throw new BusinessRuleException(
+                    "Career has students and cannot be deleted. Change its status to INACTIVE instead");
+        }
         if (studyPlanRepository.existsByCareerId(id)) {
             throw new BusinessRuleException(
                     "Career has study plans and cannot be deleted. Change its status to INACTIVE instead");
