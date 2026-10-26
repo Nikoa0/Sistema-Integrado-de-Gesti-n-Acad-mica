@@ -1,5 +1,6 @@
 package com.ipt.siga.dtos;
 
+import com.ipt.siga.enums.StudentStatus;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -9,5 +10,6 @@ public record StudentUpdateRequest(
         @NotBlank @Size(max = 150) String fullName,
         @NotBlank @Email @Size(max = 150) String email,
         @NotNull Long careerId,
-        Long studyPlanId
+        Long studyPlanId,
+        StudentStatus status
 ) {}

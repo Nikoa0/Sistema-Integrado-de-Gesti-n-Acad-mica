@@ -1,35 +1,43 @@
 package com.ipt.siga.entities;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "enrollments")
-@Data
+@Table(name = "enrollments",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"student_id", "section_id"}))
+@Getter
+@Setter
 @NoArgsConstructor
-@AllArgsConstructor
 public class Enrollment {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Double finalGrade; // Rango de 1.0 a 7.0 (Puede ser null si aún no termina el semestre)[cite: 10]
-
-    private LocalDate registrationDate; // Fecha en que se realizó la inscripción[cite: 9]
-
-    // Relaciones de la inscripción[cite: 9]
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "student_id", nullable = false)
     private Student student;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "subject_id", nullable = false)
+    private Subject subject;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "section_id", nullable = false)
     private Section section;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "period_id", nullable = false)
-    private AcademicPeriod academicPeriod;
+    private AcademicPeriod period;
+
+    @Column(nullable = false)
+    private LocalDate enrolledAt;
+
+    // Final grade (1.0 - 7.0). It stays null until Epic 7.
+    private Double grade;
 }

@@ -2,7 +2,6 @@ package com.ipt.siga.services;
 
 import com.ipt.siga.dtos.StudentCreateRequest;
 import com.ipt.siga.dtos.StudentResponse;
-import com.ipt.siga.dtos.StudentStatusRequest;
 import com.ipt.siga.dtos.StudentUpdateRequest;
 import com.ipt.siga.entities.Career;
 import com.ipt.siga.entities.Student;
@@ -15,6 +14,8 @@ import com.ipt.siga.repositories.StudentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.ipt.siga.repositories.EnrollmentRepository;
+import com.ipt.siga.repositories.MatriculationRepository;
 
 import java.util.List;
 
@@ -25,6 +26,8 @@ public class StudentService {
     private final StudentRepository studentRepository;
     private final CareerService careerService;
     private final StudyPlanService studyPlanService;
+    private final EnrollmentRepository enrollmentRepository;
+    private final MatriculationRepository matriculationRepository;
 
     @Transactional
     public StudentResponse create(StudentCreateRequest request) {
@@ -79,6 +82,14 @@ public class StudentService {
             throw new BusinessRuleException("A student with email " + email + " already exists");
         }
 
+        // GRADUATED and ELIMINATED cannot be assigned manually
+        boolean statusChanged = request.status() != null && request.status() != student.getStatus();
+        if (statusChanged && (request.status() == StudentStatus.GRADUATED
+                || request.status() == StudentStatus.ELIMINATED)) {
+            throw new BusinessRuleException(
+                    "GRADUATED and ELIMINATED are assigned automatically when an academic period is closed");
+        }
+
         Career career = careerService.getCareerOrThrow(request.careerId());
         boolean careerChanged = !student.getCareer().getId().equals(career.getId());
 
@@ -107,23 +118,9 @@ public class StudentService {
         student.setEmail(email);
         student.setCareer(career);
         student.setStudyPlan(newPlan);
-        return toResponse(studentRepository.save(student));
-    }
-
-    @Transactional
-    public StudentResponse updateStatus(Long id, StudentStatusRequest request) {
-        Student student = getStudentOrThrow(id);
-        StudentStatus target = request.status();
-
-        if (target == StudentStatus.GRADUATED || target == StudentStatus.ELIMINATED) {
-            throw new BusinessRuleException(
-                    "GRADUATED and ELIMINATED are assigned automatically when an academic period is closed");
+        if (statusChanged) {
+            student.setStatus(request.status());
         }
-        if (student.getStatus() == StudentStatus.GRADUATED || student.getStatus() == StudentStatus.ELIMINATED) {
-            throw new BusinessRuleException(
-                    "The status of a graduated or eliminated student cannot be changed");
-        }
-        student.setStatus(target);
         return toResponse(studentRepository.save(student));
     }
 
@@ -134,6 +131,7 @@ public class StudentService {
             throw new BusinessRuleException(
                     "Student has enrollments or academic history and cannot be deleted");
         }
+        matriculationRepository.deleteByStudentId(id);
         studentRepository.delete(student);
     }
 
@@ -148,9 +146,8 @@ public class StudentService {
         }
     }
 
-    // TODO (Epics 6 and 7): return true if the student has enrollments or academic history
     private boolean hasAcademicHistory(Student student) {
-        return false;
+        return enrollmentRepository.existsByStudentId(student.getId());
     }
 
     private StudentResponse toResponse(Student s) {

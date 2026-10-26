@@ -2,12 +2,13 @@ package com.ipt.siga.services;
 
 import com.ipt.siga.dtos.TeacherCreateRequest;
 import com.ipt.siga.dtos.TeacherResponse;
-import com.ipt.siga.dtos.TeacherStatusRequest;
 import com.ipt.siga.dtos.TeacherUpdateRequest;
 import com.ipt.siga.entities.Teacher;
+import com.ipt.siga.enums.PeriodStatus;
 import com.ipt.siga.enums.TeacherStatus;
 import com.ipt.siga.exceptions.BusinessRuleException;
 import com.ipt.siga.exceptions.ResourceNotFoundException;
+import com.ipt.siga.repositories.SectionRepository;
 import com.ipt.siga.repositories.TeacherRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -20,6 +21,7 @@ import java.util.List;
 public class TeacherService {
 
     private final TeacherRepository teacherRepository;
+    private final SectionRepository sectionRepository;
 
     @Transactional
     public TeacherResponse create(TeacherCreateRequest request) {
@@ -65,22 +67,20 @@ public class TeacherService {
             throw new BusinessRuleException("A teacher with email " + email + " already exists");
         }
 
+        boolean statusChanged = request.status() != null && request.status() != teacher.getStatus();
+        if (statusChanged && request.status() == TeacherStatus.INACTIVE
+                && hasSectionsInOpenPeriod(teacher)) {
+            throw new BusinessRuleException(
+                    "Teacher has sections in an OPEN academic period and cannot be set to INACTIVE");
+        }
+
         teacher.setFullName(request.fullName().trim());
         teacher.setEmail(email);
         teacher.setProfessionalTitle(request.professionalTitle().trim());
         teacher.setAcademicDegree(request.academicDegree().trim());
-        return toResponse(teacherRepository.save(teacher));
-    }
-
-    @Transactional
-    public TeacherResponse updateStatus(Long id, TeacherStatusRequest request) {
-        Teacher teacher = getTeacherOrThrow(id);
-
-        if (request.status() == TeacherStatus.INACTIVE && hasSectionsInOpenPeriod(teacher)) {
-            throw new BusinessRuleException(
-                    "Teacher has sections in an OPEN academic period and cannot be set to INACTIVE");
+        if (statusChanged) {
+            teacher.setStatus(request.status());
         }
-        teacher.setStatus(request.status());
         return toResponse(teacherRepository.save(teacher));
     }
 
@@ -98,14 +98,12 @@ public class TeacherService {
                 .orElseThrow(() -> new ResourceNotFoundException("Teacher not found with id " + id));
     }
 
-    // TODO (Epic 5): return true if the teacher has any section assigned
     private boolean hasSections(Teacher teacher) {
-        return false;
+        return sectionRepository.existsByTeacherId(teacher.getId());
     }
 
-    // TODO (Epic 5): return true if the teacher has sections in an OPEN academic period
     private boolean hasSectionsInOpenPeriod(Teacher teacher) {
-        return false;
+        return sectionRepository.existsByTeacherIdAndPeriodStatus(teacher.getId(), PeriodStatus.OPEN);
     }
 
     private TeacherResponse toResponse(Teacher t) {

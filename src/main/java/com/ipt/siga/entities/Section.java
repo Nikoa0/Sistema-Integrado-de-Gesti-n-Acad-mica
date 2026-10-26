@@ -1,39 +1,41 @@
 package com.ipt.siga.entities;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
-import java.util.List;
+import lombok.Setter;
+
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
-@Table(name = "sections")
-@Data
+@Table(name = "sections",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"period_id", "subject_id"}))
+@Getter
+@Setter
 @NoArgsConstructor
-@AllArgsConstructor
 public class Section {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Integer capacity; // No podrá superar los 60 estudiantes[cite: 8]
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "period_id", nullable = false)
+    private AcademicPeriod period;
 
-    // Guarda una lista de bloques horarios simples como "L2", "W3"[cite: 7, 8]
-    @ElementCollection
-    @CollectionTable(name = "section_schedules", joinColumns = @JoinColumn(name = "section_id"))
-    @Column(name = "schedule_block")
-    private List<String> scheduleBlocks;
-
-    // Relaciones de la sección[cite: 8]
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "subject_id", nullable = false)
     private Subject subject;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "teacher_id", nullable = false)
     private Teacher teacher;
 
-    @ManyToOne
-    @JoinColumn(name = "period_id", nullable = false)
-    private AcademicPeriod academicPeriod;
+    @Column(nullable = false)
+    private Integer capacity;
+
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(name = "section_blocks", joinColumns = @JoinColumn(name = "section_id"))
+    private Set<ScheduleBlock> blocks = new HashSet<>();
 }

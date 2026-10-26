@@ -10,7 +10,7 @@ import com.ipt.siga.repositories.SubjectRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import com.ipt.siga.repositories.SectionRepository;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -25,6 +25,7 @@ public class SubjectService {
 
     private final SubjectRepository subjectRepository;
     private final StudyPlanService studyPlanService;
+    private final SectionRepository sectionRepository;
 
     @Transactional
     public SubjectResponse create(Long planId, SubjectRequest request) {
@@ -85,6 +86,9 @@ public class SubjectService {
     public void delete(Long id) {
         Subject subject = getSubjectOrThrow(id);
         // TODO (Epic 7): reject if the subject is part of any student's academic history
+        if (sectionRepository.existsBySubjectId(id)) {
+            throw new BusinessRuleException("Subject has sections and cannot be deleted");
+        }
         if (!subjectRepository.findDependents(id).isEmpty()) {
             throw new BusinessRuleException(
                     "Subject is a prerequisite of other subjects and cannot be deleted");
