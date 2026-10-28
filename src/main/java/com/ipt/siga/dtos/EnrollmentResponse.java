@@ -1,5 +1,7 @@
 package com.ipt.siga.dtos;
 
+import com.ipt.siga.enums.EnrollmentResult;
+
 import java.time.LocalDate;
 
 public record EnrollmentResponse(
@@ -13,5 +15,6 @@ public record EnrollmentResponse(
         Long periodId,
         String periodName,
         LocalDate enrolledAt,
-        Double grade
+        Double grade,
+        EnrollmentResult result
 ) {}

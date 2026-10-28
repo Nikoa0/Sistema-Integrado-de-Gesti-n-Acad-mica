@@ -3,6 +3,7 @@ package com.ipt.siga.repositories;
 import com.ipt.siga.entities.Student;
 import com.ipt.siga.enums.StudentStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
+import java.util.Optional;
 
 import java.util.List;
 
@@ -23,4 +24,6 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
     List<Student> findByStatus(StudentStatus status);
 
     List<Student> findByCareerIdAndStatus(Long careerId, StudentStatus status);
+
+    Optional<Student> findByEmail(String email);   // en StudentRepository
 }

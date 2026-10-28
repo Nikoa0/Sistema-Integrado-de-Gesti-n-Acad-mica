@@ -2,6 +2,10 @@
 workspace:
   id: 0c773e46-4821-4d5d-8398-e9530b2877f5
 
+cloudResources:
+  collections:
+    ../postman/collections/SIGA IPT API: 2911d4b3-e981-4228-b42a-1f1242446ea1
+
 # All resources in the `postman/` folder are automatically registered in Local View.
 # Point to additional files outside the `postman/` folder to register them individually. Example:
 #localResources:

@@ -28,6 +28,7 @@ public class StudentService {
     private final StudyPlanService studyPlanService;
     private final EnrollmentRepository enrollmentRepository;
     private final MatriculationRepository matriculationRepository;
+    private final AccessControlService accessControlService; // NEW
 
     @Transactional
     public StudentResponse create(StudentCreateRequest request) {
@@ -70,6 +71,7 @@ public class StudentService {
 
     @Transactional(readOnly = true)
     public StudentResponse findById(Long id) {
+        accessControlService.requireStudentAccess(id); // NEW: a student can only see their own data
         return toResponse(getStudentOrThrow(id));
     }
 

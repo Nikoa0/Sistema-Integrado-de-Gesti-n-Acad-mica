@@ -2,7 +2,9 @@ package com.ipt.siga.controllers;
 
 import com.ipt.siga.dtos.AcademicPeriodRequest;
 import com.ipt.siga.dtos.AcademicPeriodResponse;
+import com.ipt.siga.dtos.ClosureResponse;
 import com.ipt.siga.services.AcademicPeriodService;
+import com.ipt.siga.services.PeriodClosureService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -20,6 +22,7 @@ import java.util.List;
 public class AcademicPeriodController {
 
     private final AcademicPeriodService academicPeriodService;
+    private final PeriodClosureService periodClosureService;
 
     @Operation(summary = "Create an academic period (it starts OPEN)")
     @PostMapping
@@ -37,6 +40,12 @@ public class AcademicPeriodController {
     @GetMapping("/{id}")
     public AcademicPeriodResponse findById(@PathVariable Long id) {
         return academicPeriodService.findById(id);
+    }
+
+    @Operation(summary = "Close an academic period (consolidates grades and updates student statuses)")
+    @PostMapping("/{id}/close")
+    public ClosureResponse close(@PathVariable Long id) {
+        return periodClosureService.close(id);
     }
 
     @Operation(summary = "Delete an academic period (only if it has no sections)")

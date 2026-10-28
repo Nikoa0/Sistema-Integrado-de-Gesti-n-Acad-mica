@@ -32,4 +32,16 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
     List<Long> findApprovedSubjectIds(@Param("studentId") Long studentId,
                                       @Param("status") PeriodStatus status,
                                       @Param("minGrade") Double minGrade);
+
+    // Enrollments of a period that still have no grade
+    List<Enrollment> findByPeriodIdAndGradeIsNull(Long periodId);
+
+    // How many times the student failed a subject in CLOSED periods
+    @Query("select count(e) from Enrollment e "
+            + "where e.student.id = :studentId and e.subject.id = :subjectId "
+            + "and e.period.status = :status and e.grade < :minGrade")
+    long countFailures(@Param("studentId") Long studentId,
+                       @Param("subjectId") Long subjectId,
+                       @Param("status") PeriodStatus status,
+                       @Param("minGrade") Double minGrade);
 }

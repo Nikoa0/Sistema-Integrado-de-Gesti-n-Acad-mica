@@ -9,6 +9,7 @@ import com.ipt.siga.entities.ScheduleBlock;
 import com.ipt.siga.entities.Section;
 import com.ipt.siga.entities.Student;
 import com.ipt.siga.entities.Subject;
+import com.ipt.siga.enums.EnrollmentResult;
 import com.ipt.siga.enums.PeriodStatus;
 import com.ipt.siga.enums.StudentStatus;
 import com.ipt.siga.exceptions.BusinessRuleException;
@@ -46,9 +47,12 @@ public class EnrollmentService {
     private final StudentService studentService;
     private final AcademicPeriodService academicPeriodService;
     private final SectionService sectionService;
+    private final AccessControlService accessControlService; // NEW
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public List<EnrollmentResponse> enroll(Long studentId, EnrollmentRequest request) {
+        accessControlService.requireStudentAccess(studentId); // NEW
+
         Student student = studentService.getStudentOrThrow(studentId);
         AcademicPeriod period = academicPeriodService.getPeriodOrThrow(request.periodId());
         requireOpen(period);
@@ -200,12 +204,14 @@ public class EnrollmentService {
     public void cancel(Long enrollmentId) {
         Enrollment enrollment = enrollmentRepository.findById(enrollmentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Enrollment not found with id " + enrollmentId));
+        accessControlService.requireStudentAccess(enrollment.getStudent().getId()); // NEW
         requireOpen(enrollment.getPeriod());
         enrollmentRepository.delete(enrollment);
     }
 
     @Transactional(readOnly = true)
     public List<SectionResponse> findOffer(Long studentId, Long periodId) {
+        accessControlService.requireStudentAccess(studentId); // NEW
         Student student = studentService.getStudentOrThrow(studentId);
         academicPeriodService.getPeriodOrThrow(periodId);
         return sectionService.findOffer(periodId, student.getStudyPlan().getId());
@@ -213,6 +219,7 @@ public class EnrollmentService {
 
     @Transactional(readOnly = true)
     public List<EnrollmentResponse> findByStudent(Long studentId, Long periodId) {
+        accessControlService.requireStudentAccess(studentId); // NEW
         studentService.getStudentOrThrow(studentId);
         List<Enrollment> enrollments = (periodId == null)
                 ? enrollmentRepository.findByStudentId(studentId)
@@ -228,7 +235,8 @@ public class EnrollmentService {
 
     @Transactional(readOnly = true)
     public List<EnrollmentResponse> findBySection(Long sectionId) {
-        sectionService.getSectionOrThrow(sectionId);
+        Section section = sectionService.getSectionOrThrow(sectionId); // CHANGED
+        accessControlService.requireSectionAccess(section);            // NEW: a teacher only sees their sections
         return enrollmentRepository.findBySectionId(sectionId).stream().map(this::toResponse).toList();
     }
 
@@ -238,12 +246,16 @@ public class EnrollmentService {
         }
     }
 
-    private EnrollmentResponse toResponse(Enrollment e) {
+    public EnrollmentResponse toResponse(Enrollment e) {
+        EnrollmentResult result = null;
+        if (e.getGrade() != null) {
+            result = e.getGrade() >= PASSING_GRADE ? EnrollmentResult.APPROVED : EnrollmentResult.FAILED;
+        }
         return new EnrollmentResponse(e.getId(),
                 e.getStudent().getId(), e.getStudent().getFullName(),
                 e.getSubject().getId(), e.getSubject().getCode(), e.getSubject().getName(),
                 e.getSection().getId(),
                 e.getPeriod().getId(), e.getPeriod().getAcademicYear() + "-" + e.getPeriod().getSemester(),
-                e.getEnrolledAt(), e.getGrade());
+                e.getEnrolledAt(), e.getGrade(), result);
     }
 }

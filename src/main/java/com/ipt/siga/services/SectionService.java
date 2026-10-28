@@ -33,6 +33,7 @@ public class SectionService {
     private final SubjectService subjectService;
     private final TeacherService teacherService;
     private final EnrollmentRepository enrollmentRepository;
+    private final AccessControlService accessControlService; // NEW
 
     @Transactional
     public SectionResponse create(Long periodId, SectionCreateRequest request) {
@@ -63,9 +64,16 @@ public class SectionService {
     @Transactional(readOnly = true)
     public List<SectionResponse> findByPeriod(Long periodId, Long teacherId) {
         academicPeriodService.getPeriodOrThrow(periodId);
-        List<Section> sections = (teacherId == null)
+
+        // NEW: a TEACHER only sees their own sections, even if they send another teacherId
+        Long filterTeacherId = teacherId;
+        if (accessControlService.hasRole("TEACHER") && !accessControlService.hasRole("ADMIN")) {
+            filterTeacherId = accessControlService.currentTeacher().getId();
+        }
+
+        List<Section> sections = (filterTeacherId == null)
                 ? sectionRepository.findByPeriodId(periodId)
-                : sectionRepository.findByPeriodIdAndTeacherId(periodId, teacherId);
+                : sectionRepository.findByPeriodIdAndTeacherId(periodId, filterTeacherId);
         return sections.stream().map(this::toResponse).toList();
     }
 
