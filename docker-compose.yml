@@ -1,28 +1,72 @@
+# Production deployment:  docker compose -f docker-compose.prod.yml --env-file .env up -d
 services:
   db:
     image: mysql:8.4
-    container_name: siga-db
+    restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
       MYSQL_DATABASE: ${DB_NAME}
       MYSQL_USER: ${DB_USER}
       MYSQL_PASSWORD: ${DB_PASSWORD}
-    ports:
-      - "${DB_PORT}:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${DB_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks: [siga]
 
   keycloak:
     image: quay.io/keycloak/keycloak:26.0
-    container_name: siga-keycloak
+    restart: unless-stopped
     command: start-dev
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN}
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      KC_HOSTNAME: http://${PUBLIC_HOST}:8080
     ports:
       - "8080:8080"
     volumes:
       - keycloak_data:/opt/keycloak/data
+    networks: [siga]
+
+  backend:
+    image: ${DOCKERHUB_USER}/siga-backend:latest
+    restart: unless-stopped        # a replica may crash once while Hibernate creates the tables
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      KEYCLOAK_ISSUER_URI: ${KEYCLOAK_ISSUER_URI}
+    depends_on:
+      db:
+        condition: service_healthy
+    deploy:
+      replicas: 3
+    networks: [siga]
+
+  frontend:
+    image: ${DOCKERHUB_USER}/siga-frontend:latest
+    restart: unless-stopped
+    networks: [siga]
+
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - backend
+      - frontend
+    networks: [siga]
+
+networks:
+  siga:
 
 volumes:
   mysql_data:
