@@ -4,6 +4,7 @@ import com.ipt.siga.dtos.SubjectRequest;
 import com.ipt.siga.dtos.SubjectResponse;
 import com.ipt.siga.entities.StudyPlan;
 import com.ipt.siga.entities.Subject;
+import com.ipt.siga.repositories.EnrollmentRepository;
 import com.ipt.siga.exceptions.BusinessRuleException;
 import com.ipt.siga.exceptions.ResourceNotFoundException;
 import com.ipt.siga.repositories.SubjectRepository;
@@ -26,6 +27,7 @@ public class SubjectService {
     private final SubjectRepository subjectRepository;
     private final StudyPlanService studyPlanService;
     private final SectionRepository sectionRepository;
+    private final EnrollmentRepository enrollmentRepository;
 
     @Transactional
     public SubjectResponse create(Long planId, SubjectRequest request) {
@@ -85,7 +87,10 @@ public class SubjectService {
     @Transactional
     public void delete(Long id) {
         Subject subject = getSubjectOrThrow(id);
-        // TODO (Epic 7): reject if the subject is part of any student's academic history
+        if (enrollmentRepository.existsBySubjectId(id)) {
+            throw new BusinessRuleException(
+                    "Subject is part of the academic history of students and cannot be deleted");
+        }
         if (sectionRepository.existsBySubjectId(id)) {
             throw new BusinessRuleException("Subject has sections and cannot be deleted");
         }

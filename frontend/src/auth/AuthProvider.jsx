@@ -13,7 +13,7 @@ function initKeycloak() {
   if (!initPromise) {
     initPromise = keycloak.init({
       onLoad: "login-required",
-      pkceMethod: "S256",
+      pkceMethod: window.isSecureContext ? "S256" : false,
       checkLoginIframe: false,
     });
   }

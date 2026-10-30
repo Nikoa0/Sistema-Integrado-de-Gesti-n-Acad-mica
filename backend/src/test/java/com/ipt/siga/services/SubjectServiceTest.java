@@ -7,6 +7,7 @@ import com.ipt.siga.entities.Subject;
 import com.ipt.siga.exceptions.BusinessRuleException;
 import com.ipt.siga.exceptions.ResourceNotFoundException;
 import com.ipt.siga.repositories.SectionRepository;
+import com.ipt.siga.repositories.EnrollmentRepository;
 import com.ipt.siga.repositories.SubjectRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,6 +33,8 @@ class SubjectServiceTest {
     private StudyPlanService studyPlanService;
     @Mock
     private SectionRepository sectionRepository;
+    @Mock
+    private EnrollmentRepository enrollmentRepository;
 
     @InjectMocks
     private SubjectService subjectService;
@@ -306,5 +309,15 @@ class SubjectServiceTest {
         subjectService.delete(1L);
 
         verify(subjectRepository).delete(existing);
+    }
+
+    @Test
+    void delete_inAcademicHistory_throws() {
+        when(subjectRepository.findById(1L)).thenReturn(Optional.of(subject(1L, "TAP101", 1)));
+        when(enrollmentRepository.existsBySubjectId(1L)).thenReturn(true);
+
+        assertThrows(BusinessRuleException.class, () -> subjectService.delete(1L));
+
+        verify(subjectRepository, never()).delete(any());
     }
 }

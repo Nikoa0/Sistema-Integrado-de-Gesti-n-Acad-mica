@@ -1,4 +1,4 @@
-# Production deployment:  docker compose -f docker-compose.prod.yml --env-file .env up -d
+# Production deployment:  docker compose --env-file .env up -d
 services:
   db:
     image: mysql:8.4
@@ -20,15 +20,18 @@ services:
   keycloak:
     image: quay.io/keycloak/keycloak:26.0
     restart: unless-stopped
-    command: start-dev
+    command: start-dev --import-realm
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN}
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
       KC_HOSTNAME: http://${PUBLIC_HOST}:8080
+      KC_HTTP_ENABLED: "true"
+      JAVA_OPTS_KC_HEAP: "-Xms256m -Xmx512m"
     ports:
       - "8080:8080"
     volumes:
       - keycloak_data:/opt/keycloak/data
+      - ./keycloak:/opt/keycloak/data/import:ro      # realm "siga" is imported on first start
     networks: [siga]
 
   backend:
@@ -41,6 +44,9 @@ services:
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
       KEYCLOAK_ISSUER_URI: ${KEYCLOAK_ISSUER_URI}
+      SIGA_SEED_ENABLED: "true"
+      SIGA_SEED_DEMO: ${SIGA_SEED_DEMO:-true}
+      JAVA_TOOL_OPTIONS: "-Xms128m -Xmx320m"
     depends_on:
       db:
         condition: service_healthy
