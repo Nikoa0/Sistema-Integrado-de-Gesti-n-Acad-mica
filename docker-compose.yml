@@ -27,6 +27,9 @@ services:
       KC_HOSTNAME: http://${PUBLIC_HOST}:8080
       KC_HTTP_ENABLED: "true"
       JAVA_OPTS_KC_HEAP: "-Xms256m -Xmx512m"
+      DEMO_ADMIN_PASSWORD: ${DEMO_ADMIN_PASSWORD}
+      DEMO_TEACHER_PASSWORD: ${DEMO_TEACHER_PASSWORD}
+      DEMO_STUDENT_PASSWORD: ${DEMO_STUDENT_PASSWORD}
     ports:
       - "8080:8080"
     volumes:
@@ -44,8 +47,6 @@ services:
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
       KEYCLOAK_ISSUER_URI: ${KEYCLOAK_ISSUER_URI}
-      SIGA_SEED_ENABLED: "true"
-      SIGA_SEED_DEMO: ${SIGA_SEED_DEMO:-true}
       JAVA_TOOL_OPTIONS: "-Xms128m -Xmx320m"
     depends_on:
       db:
