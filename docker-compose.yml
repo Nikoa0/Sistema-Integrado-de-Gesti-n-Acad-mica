@@ -18,7 +18,7 @@ services:
     networks: [siga]
 
   keycloak:
-    image: quay.io/keycloak/keycloak:26.0
+    image: quay.io/keycloak/keycloak:26.8
     restart: unless-stopped
     command: start-dev --import-realm
     environment:
@@ -27,9 +27,6 @@ services:
       KC_HOSTNAME: http://${PUBLIC_HOST}:8080
       KC_HTTP_ENABLED: "true"
       JAVA_OPTS_KC_HEAP: "-Xms256m -Xmx512m"
-      DEMO_ADMIN_PASSWORD: ${DEMO_ADMIN_PASSWORD}
-      DEMO_TEACHER_PASSWORD: ${DEMO_TEACHER_PASSWORD}
-      DEMO_STUDENT_PASSWORD: ${DEMO_STUDENT_PASSWORD}
     ports:
       - "8080:8080"
     volumes:
